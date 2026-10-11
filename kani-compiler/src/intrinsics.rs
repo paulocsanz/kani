@@ -299,7 +299,14 @@ impl Intrinsic {
                 }
             }
             "catch_unwind" => {
-                assert_sig_matches!(sig, RigidTy::FnPtr(_), RigidTy::RawPtr(_, Mutability::Mut), RigidTy::FnPtr(_) => RigidTy::Bool);
+                // The output type of `catch_unwind` drifts across rustc versions
+                // (i32 in older nightlies, bool in newer ones). This intrinsic is
+                // `Unimplemented` regardless (issue #267), so an exact output-type
+                // assertion here only turns benign std drift into a hard compiler
+                // ICE (seen with kani-0.68.0 + its pinned std: "assertion failed:
+                // matches!(output.kind(), ... Int(IntTy::I32))" while the shipped
+                // libstd.rlib passes `Bool`). Accept any output type.
+                assert_sig_matches!(sig, RigidTy::FnPtr(_), RigidTy::RawPtr(_, Mutability::Mut), RigidTy::FnPtr(_) => _);
                 Self::Unimplemented {
                     name: intrinsic_str,
                     issue_link: "https://github.com/model-checking/kani/issues/267".into(),
